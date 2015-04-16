@@ -4,6 +4,7 @@
 using namespace std;
 
 const int inputMaxLen = 128;
+const string path = "apwd.txt";
 
 int main(int argc, char** argv)
 {
@@ -23,7 +24,8 @@ int main(int argc, char** argv)
 		cin.getline(pass, inputMaxLen);
 
 		// Add this domain
-		Domain new_domain(name, user, pass);
+		Domain domain(name, user, pass);
+		domain.writeDomain(path);
 	}
 	else if (argc == 3 && argv[1] == string("get"))
 	{
@@ -33,17 +35,15 @@ int main(int argc, char** argv)
 		//TODO
 
 		// Get domain and print username and password to screen
-		Domain* domain = Domain::getDomain(argv[2]);
-
-		if (domain != nullptr)
+		Domain domain;
+		if (domain.readDomain(argv[2], path))
 		{
-			cout << "Username: " << domain->getName() << endl
-				<< "Password: " << domain->getPass() << endl;
-			delete domain;
+			cout << "Username: " << domain.getUser() << endl
+				<< "Password: " << domain.getPass() << endl;
 		}
 		else
 		{
-			cout << "No such domain." << endl;
+			cout << "Domain not found." << endl;
 		}
 	}
 	else if (argc == 2 && argv[1] == string("list"))

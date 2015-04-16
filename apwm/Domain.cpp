@@ -1,11 +1,21 @@
 #include <string>
+#include <exception>
+#include <fstream>
 #include "Blowfish.h"
 #include "Domain.h"
 using namespace std;
 
+
+// Public constructors
+Domain::Domain()
+{
+	_name = "";
+	_userPadded = _passPadded = _userEncrypted = _passEncrypted = nullptr;
+}
+
 Domain::Domain(const string& name, const string& user, const string& pass) : _name(name)
 {
-	// Pad
+	// Pad string to a length that is a multiple of 8 bytes, which is a CBlowfish requirement
 	_userPadded = pkcs5pad(user);
 	_passPadded = pkcs5pad(pass);
 
@@ -26,30 +36,120 @@ Domain::Domain(const string& name, const string& user, const string& pass) : _na
 
 Domain::~Domain()
 {
+	// Clear and delete buffers
 	if (_userPadded != nullptr)
 	{
+		memset(_userPadded, 0, strlen((char*)_userPadded));
 		delete _userPadded;
 	}
-
 	if (_passPadded != nullptr)
 	{
+		memset(_passPadded, 0, strlen((char*)_passPadded));
 		delete _passPadded;
 	}
-
 	if (_userEncrypted != nullptr)
 	{
+		memset(_userEncrypted, 0, strlen((char*)_userEncrypted));
 		delete _userEncrypted;
 	}
-
 	if (_passEncrypted != nullptr)
 	{
+		memset(_passEncrypted, 0, strlen((char*)_passEncrypted));
 		delete _passEncrypted;
 	}
 }
 
-Domain* Domain::getDomain(const string& name)
+bool Domain::writeDomain(const string& path)
 {
-	return new Domain("dummy", "dummy", "dummy");
+	bool success = false;
+
+	// Write this domain to file
+	if (_userEncrypted != nullptr && _passEncrypted != nullptr)
+	{
+		// Dim and create buffers
+		int userBufLen = strlen((char*)_userEncrypted);
+		int passBufLen = strlen((char*)_passEncrypted);
+		char* userHex = new char[userBufLen * 2 + 1];
+		char* passHex = new char[passBufLen * 2 + 1];
+
+		// Convert encrypted strings to hex-strings
+		CharStr2HexStr(_userEncrypted, userHex, userBufLen);
+		CharStr2HexStr(_passEncrypted, passHex, passBufLen);
+
+		// Open file and append this domain
+		ofstream outFile;
+		outFile.open(path, ios::out | ios::app);
+		if (outFile.is_open())
+		{
+			outFile << _name << endl << userHex << endl << passHex << endl;
+			success = true;
+			outFile.close();
+		}
+
+		// Clean up buffers
+		memset(userHex, 0, userBufLen * 2);
+		memset(passHex, 0, userBufLen * 2);
+		delete userHex;
+		delete passHex;
+	}
+
+	return success;
+}
+
+bool Domain::readDomain(const string& domain, const string& path)
+{
+	bool success = false;
+
+	// Make sure this is an empty domain
+	if (_userPadded != nullptr || _passPadded != nullptr)
+		return success;
+
+	string name, userHex, passHex;
+	ifstream inFile;
+	inFile.open(path);
+	if (inFile.is_open())
+	{
+		while (getline(inFile, name))
+		{
+			if (name.compare(domain) == 0)
+			{
+				// Found our domain in file. Get username and password.
+				_name = name;
+				getline(inFile, userHex);
+				getline(inFile, passHex);
+
+				// Prepare buffers
+				int userBufLen = userHex.length() / 2;
+				int passBufLen = passHex.length() / 2;
+				unsigned char* user = new unsigned char[userBufLen + 1];
+				unsigned char* pass = new unsigned char[passBufLen + 1];
+				_userPadded = new unsigned char[userBufLen + 1];
+				_passPadded = new unsigned char[passBufLen + 1];
+				memset(user, 0, userBufLen + 1);
+				memset(pass, 0, passBufLen + 1);
+				memset(_userPadded, 0, userBufLen + 1);
+				memset(_passPadded, 0, passBufLen + 1);
+
+				// Convert from hex string to unsigned char string that can be used by blowfish
+				HexStr2CharStr(userHex.c_str(), user, userBufLen);
+				HexStr2CharStr(passHex.c_str(), pass, passBufLen);
+
+				// Decrypt
+				// TODO: Master password
+				CBlowFish blowfish((unsigned char*)"default_key23456", 16);
+				blowfish.Decrypt(user, _userPadded, userBufLen);
+				blowfish.Decrypt(pass, _passPadded, passBufLen);
+
+				// Done. Clean up.
+				delete user;
+				delete pass;
+				success = true;
+				break;
+			}
+		}
+	}
+
+	return success;
 }
 
 string* Domain::listDomains(int& domainCount)
@@ -64,17 +164,23 @@ string* Domain::listDomains(int& domainCount)
 
 string Domain::getName()
 {
-	return string("dummy");
+	return _name;
 }
 
-string Domain::getuser()
+string Domain::getUser()
 {
-	return string("dummy");
+	if (_userPadded == nullptr)
+		return "";
+	else
+		return pkcs5unpad(_userPadded);
 }
 
 string Domain::getPass()
 {
-	return string("dummy");
+	if (_passPadded == nullptr)
+		return "";
+	else
+		return pkcs5unpad(_passPadded);
 }
 
 unsigned char* Domain::pkcs5pad(const string& unpadded)
@@ -94,20 +200,17 @@ unsigned char* Domain::pkcs5pad(const string& unpadded)
 
 string Domain::pkcs5unpad(const unsigned char* padded)
 {
-	return string("dummy");
-}
+	// Remove padding from a string passed through pkcs5pad()
+	string unpadded = (char*)padded;
+	int lastCharVal = (int)unpadded.back();
+	if (lastCharVal > 0 && lastCharVal < 8)
+		unpadded.erase(unpadded.length() - lastCharVal, lastCharVal);
 
-void Domain::writeDomain()
-{
-}
-
-
-void Domain::readDomain()
-{
+	return unpadded;
 }
 
 // The following four functions are borrowed from test.cpp from "A C++ Implementation of the Blowfish
-// Encryption/Decryption method" by George Anescu
+// Encryption/Decryption method" by George Anescu. See BLOWFISH_LICENSE for licensing details.
 // http://www.codeproject.com/Articles/1400/A-C-Implementation-of-the-Blowfish-Encryption-Decr
 
 

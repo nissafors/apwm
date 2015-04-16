@@ -5,18 +5,18 @@ using namespace std;
 class Domain
 {
 public:
+	Domain();
 	Domain(const string& name, const string& user, const string& pass);
 	~Domain();
-	static Domain* getDomain(const string& name);
+	bool writeDomain(const string& path);
+	bool readDomain(const string& domain, const string& path);
 	static string* listDomains(int& domainCount);
 	string getName();
-	string getuser();
+	string getUser();
 	string getPass();
 private:
 	unsigned char * pkcs5pad(const string& unpadded);
 	string pkcs5unpad(const unsigned char* padded);
-	void writeDomain();
-	void readDomain();
 	string _name;
 	unsigned char* _userPadded;
 	unsigned char* _passPadded;
