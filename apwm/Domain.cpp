@@ -5,10 +5,46 @@ using namespace std;
 
 Domain::Domain(const string& name, const string& user, const string& pass) : _name(name)
 {
+	// Pad
+	_userPadded = pkcs5pad(user);
+	_passPadded = pkcs5pad(pass);
+
+	// Dim, create and empty buffers
+	int userBufLen = strlen((char*)_userPadded);
+	int passBufLen = strlen((char*)_passPadded);
+	_userEncrypted = new unsigned char[userBufLen + 1];
+	_passEncrypted = new unsigned char[passBufLen + 1];
+	memset(_userEncrypted, 0, userBufLen + 1);
+	memset(_passEncrypted, 0, passBufLen + 1);
+
+	// Encrypt
+	// TODO - master password
+	CBlowFish blowfish((unsigned char*)"default_key23456", 16);
+	blowfish.Encrypt(_userPadded, _userEncrypted, userBufLen);
+	blowfish.Encrypt(_passPadded, _passEncrypted, passBufLen);
 }
 
 Domain::~Domain()
 {
+	if (_userPadded != nullptr)
+	{
+		delete _userPadded;
+	}
+
+	if (_passPadded != nullptr)
+	{
+		delete _passPadded;
+	}
+
+	if (_userEncrypted != nullptr)
+	{
+		delete _userEncrypted;
+	}
+
+	if (_passEncrypted != nullptr)
+	{
+		delete _passEncrypted;
+	}
 }
 
 Domain* Domain::getDomain(const string& name)
@@ -43,14 +79,17 @@ string Domain::getPass()
 
 unsigned char* Domain::pkcs5pad(const string& unpadded)
 {
+	// The original string will be padded by 8-(strlen mod 8) chars of value 8-(strlen mod 8)
 	int mLen = unpadded.length();
 	int psLenVal = 8 - (mLen % 8);
-	unsigned char* padded = new unsigned char[mLen + psLenVal];
+	unsigned char* padded = new unsigned char[mLen + psLenVal + 1];
+	strcpy((char*)padded, unpadded.c_str());
+	// Add padding
+	memset(padded + mLen, psLenVal, psLenVal);
+	// Terminate c-string
+	memset(padded + mLen + psLenVal, 0, 1);
 
-
-
-
-	return dummy;
+	return padded;
 }
 
 string Domain::pkcs5unpad(const unsigned char* padded)
