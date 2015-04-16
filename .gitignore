@@ -1,0 +1,8 @@
+Debug
+*.opensdf
+*.sdf
+*.suo
+apwm/Debug
+apwm/*.aps
+apwm/*.user
+apwm/*.filters

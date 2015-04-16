@@ -1,0 +1,8 @@
+apwm - Andreas' PassWord Manager
+
+Extremely simple password manager written in C++.
+Encryption performed by George Anescu's implementations of the Blowfish algorithm, see
+http://www.codeproject.com/Articles/1400/A-C-Implementation-of-the-Blowfish-Encryption-Decr
+
+For licensing, see LICENCE and BLOWFISH_LICENCE
+
