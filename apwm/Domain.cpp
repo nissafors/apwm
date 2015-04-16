@@ -1,6 +1,7 @@
 #include <string>
 #include <exception>
 #include <fstream>
+#include <vector>
 #include "Blowfish.h"
 #include "Domain.h"
 using namespace std;
@@ -81,7 +82,7 @@ bool Domain::writeDomain(const string& path)
 		outFile.open(path, ios::out | ios::app);
 		if (outFile.is_open())
 		{
-			outFile << _name << endl << userHex << endl << passHex << endl;
+			outFile << "Domain: " << _name << endl << userHex << endl << passHex << endl;
 			success = true;
 			outFile.close();
 		}
@@ -111,12 +112,13 @@ bool Domain::readDomain(const string& domain, const string& path)
 	{
 		while (getline(inFile, name))
 		{
-			if (name.compare(domain) == 0)
+			if (name.erase(0, 8).compare(domain) == 0)
 			{
-				// Found our domain in file. Get username and password.
+				// Found our domain in file. Get username and password and close the file.
 				_name = name;
 				getline(inFile, userHex);
 				getline(inFile, passHex);
+				inFile.close();
 
 				// Prepare buffers
 				int userBufLen = userHex.length() / 2;
@@ -147,18 +149,30 @@ bool Domain::readDomain(const string& domain, const string& path)
 				break;
 			}
 		}
+		// Domain not found. Close file.
+		inFile.close();
 	}
 
 	return success;
 }
 
-string* Domain::listDomains(int& domainCount)
+vector<string> Domain::listDomains(const string& path)
 {
-	domainCount = 2;
-	string* dummy = new string[domainCount];
-	dummy[0] = "String one";
-	dummy[1] = "Second string";
-	return dummy;
+	vector<string> domains;
+	string line;
+	ifstream inFile;
+	inFile.open(path);
+	if (inFile.is_open())
+	{
+		while (getline(inFile, line))
+		{
+			if (line.substr(0, 8).compare("Domain: ") == 0)
+				domains.push_back(line.erase(0, 8));
+		}
+		inFile.close();
+	}
+
+	return domains;
 }
 
 

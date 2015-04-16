@@ -1,5 +1,6 @@
 #ifndef DOMAIN_H
 #define DOMAIN_H
+#include <vector>
 using namespace std;
 
 class Domain
@@ -10,7 +11,7 @@ public:
 	~Domain();
 	bool writeDomain(const string& path);
 	bool readDomain(const string& domain, const string& path);
-	static string* listDomains(int& domainCount);
+	static vector<string> listDomains(const string& path);
 	string getName();
 	string getUser();
 	string getPass();

@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <vector>
 #include "Domain.h"
 using namespace std;
 
@@ -49,16 +50,17 @@ int main(int argc, char** argv)
 	else if (argc == 2 && argv[1] == string("list"))
 	{
 		// apwm list - List all available domains
-		int count;
-		string* domains = Domain::listDomains(count);
-		if (domains != nullptr)
+		vector<string> domains = Domain::listDomains(path);
+		if (domains.size() > 0)
 		{
-			for (int i = 0; i < count; i++)
+			for each (string domain in domains)
 			{
-				cout << domains[i] << endl;
+				cout << domain << endl;
 			}
-
-			delete[] domains;
+		}
+		else
+		{
+			cout << "No domains found.";
 		}
 	}
 	else
