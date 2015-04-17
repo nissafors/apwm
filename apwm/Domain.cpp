@@ -1,7 +1,7 @@
+#include <vector>
 #include <string>
 #include <exception>
 #include <fstream>
-#include <vector>
 #include "Blowfish.h"
 #include "Domain.h"
 using namespace std;
@@ -41,22 +41,22 @@ Domain::~Domain()
 	if (_userPadded != nullptr)
 	{
 		memset(_userPadded, 0, strlen((char*)_userPadded));
-		delete _userPadded;
+		delete[] _userPadded;
 	}
 	if (_passPadded != nullptr)
 	{
 		memset(_passPadded, 0, strlen((char*)_passPadded));
-		delete _passPadded;
+		delete[] _passPadded;
 	}
 	if (_userEncrypted != nullptr)
 	{
 		memset(_userEncrypted, 0, strlen((char*)_userEncrypted));
-		delete _userEncrypted;
+		delete[] _userEncrypted;
 	}
 	if (_passEncrypted != nullptr)
 	{
 		memset(_passEncrypted, 0, strlen((char*)_passEncrypted));
-		delete _passEncrypted;
+		delete[] _passEncrypted;
 	}
 }
 
@@ -89,9 +89,9 @@ bool Domain::writeDomain(const string& path)
 
 		// Clean up buffers
 		memset(userHex, 0, userBufLen * 2);
-		memset(passHex, 0, userBufLen * 2);
-		delete userHex;
-		delete passHex;
+		memset(passHex, 0, passBufLen * 2);
+		delete[] userHex;
+		delete[] passHex;
 	}
 
 	return success;
@@ -143,8 +143,8 @@ bool Domain::readDomain(const string& domain, const string& path)
 				blowfish.Decrypt(pass, _passPadded, passBufLen);
 
 				// Done. Clean up.
-				delete user;
-				delete pass;
+				delete[] user;
+				delete[] pass;
 				success = true;
 				break;
 			}

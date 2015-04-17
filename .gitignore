@@ -3,6 +3,8 @@ Debug
 *.sdf
 *.suo
 *.txt
+*.domains
+*.settings
 apwm/Debug
 apwm/*.aps
 apwm/*.user

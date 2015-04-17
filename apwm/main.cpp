@@ -5,7 +5,8 @@
 using namespace std;
 
 const int inputMaxLen = 128;
-const string path = "apwd.txt";
+const string domainsPath = "apwd.domains";
+const string settingsPath = "apwd.settings";
 
 int main(int argc, char** argv)
 {
@@ -26,7 +27,7 @@ int main(int argc, char** argv)
 
 		// Add this domain
 		Domain domain(name, user, pass);
-		domain.writeDomain(path);
+		domain.writeDomain(domainsPath);
 	}
 	else if (argc == 3 && argv[1] == string("get"))
 	{
@@ -37,7 +38,7 @@ int main(int argc, char** argv)
 
 		// Get domain and print username and password to screen
 		Domain domain;
-		if (domain.readDomain(argv[2], path))
+		if (domain.readDomain(argv[2], domainsPath))
 		{
 			cout << "Username: " << domain.getUser() << endl
 				<< "Password: " << domain.getPass() << endl;
@@ -50,7 +51,7 @@ int main(int argc, char** argv)
 	else if (argc == 2 && argv[1] == string("list"))
 	{
 		// apwm list - List all available domains
-		vector<string> domains = Domain::listDomains(path);
+		vector<string> domains = Domain::listDomains(domainsPath);
 		if (domains.size() > 0)
 		{
 			for each (string domain in domains)
